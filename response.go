@@ -2,32 +2,25 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 type RawResponse struct {
-	Data []Unknown `json:"data"`
+	Data []TableElement `json:"data"`
 }
 
-type Unknown struct {
-	Type string          `json:"type"`
-	Data json.RawMessage `json:"data"`
+type TableElement struct {
+	Type     string         `json:"type"`
+	Data     TableData      `json:"data"`
+	Children []TableElement `json:"children"`
 }
 
 type TableData struct {
-	ColumnHeaders []string `json:"columnHeaders"`
-	RowData       []Row    `json:"rowData"`
-}
-
-type Row struct {
-	CellData []Cell `json:"cellData"`
-}
-
-type Cell struct {
-	Value string
+	Name  string `json:"name"`
+	Value string `json:"value"`
+	Text  string `json:"text"`
 }
 
 type Response struct {
@@ -49,7 +42,7 @@ func parseResponse(res *http.Response) (Response, error) {
 		defer res.Body.Close()
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return Response{}, err
 	}
@@ -60,37 +53,23 @@ func parseResponse(res *http.Response) (Response, error) {
 		return Response{}, err
 	}
 
-	rows := []Row{}
+	response := Response{}
 	for _, obj := range rawResponse.Data {
-		if obj.Type == "Table" {
-			table := TableData{}
-			err = json.Unmarshal(obj.Data, &table)
-			if err != nil {
-				return Response{}, err
-			}
-			rows = append(rows, table.RowData...)
-			break
+		if obj.Type == "TableV2" {
+			response.PatientsInWaitingRoom = unsafeStringtoInt(obj.Children[1].Children[1].Data.Text)
+			response.MostUrgentCount = unsafeStringtoInt(obj.Children[2].Children[1].Data.Text)
+			response.MostUrgentTime = obj.Children[2].Children[2].Data.Text
+			response.UrgentCount = unsafeStringtoInt(obj.Children[3].Children[1].Data.Text)
+			response.UrgentTime = obj.Children[3].Children[2].Data.Text
+			response.LessThanUrgentCount = unsafeStringtoInt(obj.Children[4].Children[1].Data.Text)
+			response.LessThanUrgentTime = obj.Children[4].Children[2].Data.Text
+			response.PatientsBeingTreated = unsafeStringtoInt(obj.Children[5].Children[1].Data.Text)
+			response.TotalPatients = unsafeStringtoInt(obj.Children[7].Children[1].Data.Text)
+			response.PatientsWaitingTransfer = unsafeStringtoInt(obj.Children[7].Children[1].Data.Text) - (unsafeStringtoInt(obj.Children[1].Children[1].Data.Text) + unsafeStringtoInt(obj.Children[5].Children[1].Data.Text))
 		}
 	}
 
-	return parseRows(rows), nil
-}
-
-func parseRows(rows []Row) Response {
-	loc, _ := time.LoadLocation("America/Halifax")
-	return Response{
-		PatientsInWaitingRoom:   unsafeStringtoInt(rows[0].CellData[1].Value),
-		MostUrgentCount:         unsafeStringtoInt(rows[1].CellData[1].Value),
-		MostUrgentTime:          rows[1].CellData[2].Value,
-		UrgentCount:             unsafeStringtoInt(rows[2].CellData[1].Value),
-		UrgentTime:              rows[2].CellData[2].Value,
-		LessThanUrgentCount:     unsafeStringtoInt(rows[3].CellData[1].Value),
-		LessThanUrgentTime:      rows[3].CellData[2].Value,
-		PatientsBeingTreated:    unsafeStringtoInt(rows[4].CellData[1].Value),
-		TotalPatients:           unsafeStringtoInt(rows[6].CellData[1].Value),
-		PatientsWaitingTransfer: unsafeStringtoInt(rows[6].CellData[1].Value) - (unsafeStringtoInt(rows[0].CellData[1].Value) + unsafeStringtoInt(rows[4].CellData[1].Value)),
-		Time:                    time.Now().In(loc).Format("1/2/2006 15:04:05"),
-	}
+	return response, nil
 }
 
 func unsafeStringtoInt(str string) int {

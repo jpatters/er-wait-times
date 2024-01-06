@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -18,7 +17,7 @@ import (
 
 func appendToSheet(location string, data Response) error {
 	ctx := context.Background()
-	b, err := ioutil.ReadFile("creds.json")
+	b, err := os.ReadFile("creds.json")
 	if err != nil {
 		return fmt.Errorf("Unable to read client secret file: %v", err)
 	}
