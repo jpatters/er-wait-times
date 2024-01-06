@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type RawResponse struct {
@@ -53,6 +54,7 @@ func parseResponse(res *http.Response) (Response, error) {
 		return Response{}, err
 	}
 
+	loc, _ := time.LoadLocation("America/Halifax")
 	response := Response{}
 	for _, obj := range rawResponse.Data {
 		if obj.Type == "TableV2" {
@@ -66,6 +68,7 @@ func parseResponse(res *http.Response) (Response, error) {
 			response.PatientsBeingTreated = unsafeStringtoInt(obj.Children[5].Children[1].Data.Text)
 			response.TotalPatients = unsafeStringtoInt(obj.Children[7].Children[1].Data.Text)
 			response.PatientsWaitingTransfer = unsafeStringtoInt(obj.Children[7].Children[1].Data.Text) - (unsafeStringtoInt(obj.Children[1].Children[1].Data.Text) + unsafeStringtoInt(obj.Children[5].Children[1].Data.Text))
+			response.Time = time.Now().In(loc).Format("1/2/2006 15:04:05")
 		}
 	}
 
