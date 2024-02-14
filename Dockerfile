@@ -7,6 +7,7 @@ RUN go build -o ermon .
 
 
 FROM alpine:latest
+LABEL org.opencontainers.image.source https://github.com/jpatters/er-wait-times
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/ermon .
