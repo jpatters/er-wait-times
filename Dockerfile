@@ -10,6 +10,6 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/ermon .
-RUN echo "0 * * * * /root/ermon" > /etc/crontabs/root
+RUN echo "0 * * * * /root/ermon > /proc/1/fd/1 2> /proc/1/fd/2" > /etc/crontabs/root
 EXPOSE 8081
-CMD cron && tail -f /var/log/cron.log
+CMD crond -f
