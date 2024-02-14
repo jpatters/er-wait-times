@@ -1,6 +1,6 @@
 module github.com/jpatters/er-wait-times
 
-go 1.17
+go 1.21
 
 require google.golang.org/api v0.86.0
 
