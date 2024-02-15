@@ -180,7 +180,7 @@ func unsafeStringtoInt(str string) int {
 
 func appendToSheet(location string, data Response) error {
 	ctx := context.Background()
-	creds, err := os.ReadFile("/ermom/config/creds.json")
+	creds, err := os.ReadFile("/ermon/config/creds.json")
 	if err != nil {
 		return fmt.Errorf("Unable to read client secret file: %v", err)
 	}
@@ -235,7 +235,7 @@ func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
-	t, _ := os.ReadFile("/ermom/config/token.json")
+	t, _ := os.ReadFile("/ermon/config/token.json")
 	tok := &oauth2.Token{}
 	json.Unmarshal([]byte(t), tok)
 	return config.Client(context.Background(), tok)
